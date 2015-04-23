@@ -1,25 +1,14 @@
-﻿using System;
+﻿using Esri.ArcGISRuntime.Geometry;
+using Esri.ArcGISRuntime.Layers;
+using Esri.ArcGISRuntime.Symbology;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
-
-// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
 namespace areamap._81
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
+
     public sealed partial class MainPage : Page
     {
         public MainPage()
@@ -31,31 +20,36 @@ namespace areamap._81
             var lp = this.mapView.LocationDisplay.LocationProvider;
             lp.LocationChanged += OnLocationChanged;
 
-            //todo use MVVM to add the current location to an observable collection
-
-            //todo build out the polyline where appropaite
-            //var polylineBuilder = new PolylineBuilder(polyline); // Create builder based on existing one
-            //polylineBuilder.Parts[0].RemoveAt(0);
-            //polylineBuilder.AddPoint(8, 4); // adding a point to last part
-            //polyline = polylineBuilder.ToGeometry(); // get updated geometry
-
-
-            //PolygonBuilder builder = new PolygonBuilder(polygon); // Create builder from existing polygon  
-            //builder.AddPoint(new MapPoint(x, y)); // Add point to end  
-            //builder.Parts[0].InsertPoint(index, new MapPoint(x, y)); // Insert point into specific location  
-            //graphic.Geometry = builder.ToGeometry(); // Create geometry and assign it back to 
-
+            areaPolyGraphic.Symbol = this.Resources["polySym"] as SimpleFillSymbol;
+            (mapView.Map.Layers["AreaLayer"] as GraphicsLayer).Graphics.Add(areaPolyGraphic);
         }
 
         private async void OnLocationChanged(object sender, Esri.ArcGISRuntime.Location.LocationInfo e)
         {
+            if (e.Location.IsEqual(previousLocation))
+                return;
+
+            previousLocation = e.Location;
+
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () =>
                 {
                     this.mapView.SetViewAsync(e.Location, 100);
+
+                    gpsPoints.Add(e.Location);
+                    Polygon p = new Polygon(gpsPoints);
+                    PolygonBuilder builder = new PolygonBuilder(p);
+                    areaPolyGraphic.Geometry = builder.ToGeometry();
+
+                    double polyArea = GeometryEngine.GeodesicArea(p);
+                    areaText.Text = (polyArea * 10.7639104).ToString() + " sq ft";
                 });
         }
 
+        private PointCollection pc = new PointCollection();
+        Graphic areaPolyGraphic = new Graphic();
+        List<MapPoint> gpsPoints = new List<MapPoint>();
+        MapPoint previousLocation;
 
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
