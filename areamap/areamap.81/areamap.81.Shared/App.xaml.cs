@@ -103,6 +103,8 @@ namespace areamap._81
 
             // Ensure the current window is active
             Window.Current.Activate();
+
+            GalaSoft.MvvmLight.Threading.DispatcherHelper.Initialize();
         }
 
 #if WINDOWS_PHONE_APP

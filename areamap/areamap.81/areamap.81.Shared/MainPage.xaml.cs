@@ -1,14 +1,12 @@
-﻿using Esri.ArcGISRuntime.Geometry;
-using Esri.ArcGISRuntime.Layers;
-using Esri.ArcGISRuntime.Symbology;
-using System;
-using System.Collections.Generic;
+﻿using areamap._81.ViewModel;
+using Esri.ArcGISRuntime.Geometry;
+using GalaSoft.MvvmLight.Messaging;
+using GalaSoft.MvvmLight.Threading;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 
 namespace areamap._81
 {
-
     public sealed partial class MainPage : Page
     {
         public MainPage()
@@ -17,39 +15,20 @@ namespace areamap._81
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
 
-            var lp = this.mapView.LocationDisplay.LocationProvider;
-            lp.LocationChanged += OnLocationChanged;
-
-            areaPolyGraphic.Symbol = this.Resources["polySym"] as SimpleFillSymbol;
-            (mapView.Map.Layers["AreaLayer"] as GraphicsLayer).Graphics.Add(areaPolyGraphic);
-        }
-
-        private async void OnLocationChanged(object sender, Esri.ArcGISRuntime.Location.LocationInfo e)
-        {
-            if (e.Location.IsEqual(previousLocation))
-                return;
-
-            previousLocation = e.Location;
-
-            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
-                () =>
+            Messenger.Default.Register<MapPoint>(this, (location) =>
+            {
+                DispatcherHelper.CheckBeginInvokeOnUI(() =>
                 {
-                    this.mapView.SetViewAsync(e.Location, 100);
-
-                    gpsPoints.Add(e.Location);
-                    Polygon p = new Polygon(gpsPoints);
-                    PolygonBuilder builder = new PolygonBuilder(p);
-                    areaPolyGraphic.Geometry = builder.ToGeometry();
-
-                    double polyArea = GeometryEngine.GeodesicArea(p);
-                    areaText.Text = (polyArea * 10.7639104).ToString() + " sq ft";
+                    // zoom to current location
+                    mapView.SetViewAsync(location, 100);
                 });
+            });
         }
 
-        private PointCollection pc = new PointCollection();
-        Graphic areaPolyGraphic = new Graphic();
-        List<MapPoint> gpsPoints = new List<MapPoint>();
-        MapPoint previousLocation;
+        public MainViewModel VM
+        {
+            get { return (MainViewModel)DataContext; }
+        }
 
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
@@ -64,5 +43,6 @@ namespace areamap._81
             // If you are using the NavigationHelper provided by some templates,
             // this event is handled for you.
         }
+
     }
 }

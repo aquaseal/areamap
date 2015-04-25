@@ -5,43 +5,31 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:esri="using:Esri.ArcGISRuntime.Controls"
-      xmlns:symb="using:Esri.ArcGISRuntime.Symbology"
-      xmlns:layers="using:Esri.ArcGISRuntime.Layers"
-      xmlns:location="using:Esri.ArcGISRuntime.Location"
+      xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+      xmlns:action="using:Microsoft.Xaml.Interactions.Core"
       mc:Ignorable="d"
       Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
       DataContext="{Binding Main, Source={StaticResource Locator}}">
-    <Page.Resources>
-        <symb:SimpleMarkerSymbol x:Key="gpsSym"
-                                 Color="Blue"
-                                 Style="Circle"
-                                 Size="12" />
-        <symb:SimpleLineSymbol x:Key="lineSym"
-                               Color="Blue"
-                               Style="Dash"
-                               Width="3" />
-        <symb:SimpleFillSymbol x:Key="polySym"
-                               Color="Orange"
-                               Style="DiagonalCross"
-                               Outline="{StaticResource lineSym}" />
-    </Page.Resources>
     <Grid>
-        <esri:MapView x:Name="mapView">
-            <esri:MapView.LocationDisplay>
-                <location:LocationDisplay AutoPanMode="CompassNavigation"
-                                          DefaultSymbol="{StaticResource gpsSym}"
-                                          IsEnabled="True">
-                </location:LocationDisplay>
-            </esri:MapView.LocationDisplay>
-            <esri:Map>
-                <layers:ArcGISTiledMapServiceLayer ServiceUri="http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" />
-                <layers:GraphicsLayer ID="AreaLayer" />
-            </esri:Map>
+        <esri:MapView x:Name="mapView"
+                      LocationDisplay="{Binding LocationDisplay}"
+                      Map="{Binding MyMap}">
+            <interactivity:Interaction.Behaviors>
+                <action:EventTriggerBehavior EventName="Loaded">
+                    <action:InvokeCommandAction 
+                                Command="{Binding MapViewLoaded}" />
+                </action:EventTriggerBehavior>
+            </interactivity:Interaction.Behaviors>
         </esri:MapView>
 
-        <TextBlock x:Name="areaText"
-                   FontSize="16"
-                   VerticalAlignment="Bottom"
-                   HorizontalAlignment="Center" />
+        <StackPanel Orientation="Horizontal"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center">
+            <TextBlock FontSize="16"
+                       Text="{Binding Area, Mode=OneWay, Converter={StaticResource AreaConverter}, ConverterParameter=sqft}" />
+            <!-- UAP does not support StringFormat for bindings currently -->
+            <TextBlock FontSize="16"
+                       Text="sq ft" />
+        </StackPanel>
     </Grid>
 </Page>
